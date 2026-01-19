@@ -1,0 +1,89 @@
+D SELECT * FROM '/data/green_tripdata_2025-11.parquet' LIMIT 10;
+┌──────────┬──────────────────────┬──────────────────────┬────────────────────┬────────────┬───┬──────────────┬──────────────┬───────────┬──────────────────────┬────────────────────┐
+│ VendorID │ lpep_pickup_datetime │ lpep_dropoff_datet…  │ store_and_fwd_flag │ RatecodeID │ … │ total_amount │ payment_type │ trip_type │ congestion_surcharge │ cbd_congestion_fee │
+│  int32   │      timestamp       │      timestamp       │      varchar       │   int64    │   │    double    │    int64     │   int64   │        double        │       double       │
+├──────────┼──────────────────────┼──────────────────────┼────────────────────┼────────────┼───┼──────────────┼──────────────┼───────────┼──────────────────────┼────────────────────┤
+│        2 │ 2025-11-01 00:34:48  │ 2025-11-01 00:41:39  │ N                  │          1 │ … │        11.64 │            1 │         1 │                  0.0 │                0.0 │
+│        2 │ 2025-11-01 00:18:52  │ 2025-11-01 00:24:27  │ N                  │          1 │ … │          9.7 │            2 │         1 │                  0.0 │                0.0 │
+│        2 │ 2025-11-01 01:03:14  │ 2025-11-01 01:15:24  │ N                  │          1 │ … │         21.0 │            1 │         1 │                  0.0 │                0.0 │
+│        2 │ 2025-11-01 00:10:57  │ 2025-11-01 00:24:53  │ N                  │          1 │ … │         27.7 │            1 │         1 │                  0.0 │                0.0 │
+│        1 │ 2025-11-01 00:03:48  │ 2025-11-01 00:19:38  │ N                  │          1 │ … │        24.65 │            1 │         1 │                 2.75 │                0.0 │
+│        1 │ 2025-11-01 00:42:13  │ 2025-11-01 01:04:50  │ N                  │          1 │ … │        39.35 │            1 │         1 │                 2.75 │               0.75 │
+│        2 │ 2025-11-01 00:05:41  │ 2025-11-01 00:39:20  │ N                  │          1 │ … │        59.52 │            1 │         1 │                 2.75 │               0.75 │
+│        2 │ 2025-11-01 00:42:14  │ 2025-11-01 01:13:20  │ N                  │          1 │ … │        41.88 │            1 │         1 │                 2.75 │               0.75 │
+│        2 │ 2025-11-01 00:03:08  │ 2025-11-01 00:06:27  │ N                  │          1 │ … │         9.12 │            1 │         1 │                  0.0 │                0.0 │
+│        2 │ 2025-11-01 00:56:33  │ 2025-11-01 01:01:34  │ N                  │          1 │ … │         10.4 │            2 │         1 │                  0.0 │                0.0 │
+├──────────┴──────────────────────┴──────────────────────┴────────────────────┴────────────┴───┴──────────────┴──────────────┴───────────┴──────────────────────┴────────────────────┤
+│ 10 rows                                                                                                                                                      21 columns (10 shown) │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+D SELECT COUNT(*) AS total_trips
+  FROM '/data/green_tripdata_2025-11.parquet';
+┌─────────────┐
+│ total_trips │
+│    int64    │
+├─────────────┤
+│    46912    │
+└─────────────┘
+D SELECT COUNT(*) AS short_trips
+  FROM '/data/green_tripdata_2025-11.parquet'
+  WHERE lpep_pickup_datetime >= '2025-11-01'
+    AND lpep_pickup_datetime < '2025-12-01'
+    AND trip_distance <= 1;
+┌─────────────┐
+│ short_trips │
+│    int64    │
+├─────────────┤
+│    8007     │
+└─────────────┘
+D SELECT
+    DATE(lpep_pickup_datetime) AS pickup_day,
+    MAX(trip_distance) AS max_trip_distance
+  FROM '/data/green_tripdata_2025-11.parquet'
+  WHERE trip_distance < 100
+  GROUP BY pickup_day
+  ORDER BY max_trip_distance DESC
+  LIMIT 1;
+┌────────────┬───────────────────┐
+│ pickup_day │ max_trip_distance │
+│    date    │      double       │
+├────────────┼───────────────────┤
+│ 2025-11-14 │       88.03       │
+└────────────┴───────────────────┘
+
+             ^
+D SELECT
+    PULocationID,
+    SUM(total_amount) AS total_amount_sum
+  FROM '/data/green_tripdata_2025-11.parquet'
+  WHERE DATE(lpep_pickup_datetime) = '2025-11-18'
+  GROUP BY PULocationID
+  ORDER BY total_amount_sum DESC
+  LIMIT 1;
+┌──────────────┬───────────────────┐
+│ PULocationID │ total_amount_sum  │
+│    int32     │      double       │
+├──────────────┼───────────────────┤
+│      74      │ 9281.919999999996 │
+└──────────────┴───────────────────┘
+D 
+D 
+D SELECT
+    DOLocationID,
+    SUM(tip_amount) AS total_tip
+  FROM '/data/green_tripdata_2025-11.parquet'
+  WHERE PULocationID = 73
+    AND lpep_pickup_datetime >= '2025-11-01'
+    AND lpep_pickup_datetime < '2025-12-01'
+  GROUP BY DOLocationID
+  ORDER BY total_tip DESC
+  LIMIT 1;
+┌──────────────┬───────────────────┐
+│ DOLocationID │     total_tip     │
+│    int32     │      double       │
+├──────────────┼───────────────────┤
+│      73      │ 8.629999999999999 │
+└──────────────┴───────────────────┘
+D 
+D 
+D 
+D .exit
